@@ -104,7 +104,7 @@ st.markdown(f"""
     /* Positionnement des zones (Coordonnées ajustées pour 6c2f47.jpg) */
     .hitbox {{ position: absolute; z-index: 100; }}
     
-    #exit {{ top: 40%; left: 38%; width: 10%; height: 22%; }}
+    #exit {{ top: 0%; left: 3%; width: 10%; height: 22%; }}
     #elec {{ top: 74%; left: 42%; width: 14%; height: 12%; }}
     #pc   {{ top: 45%; left: 68%; width: 10%; height: 12%; }}
     #sac  {{ top: 72%; left: 71%; width: 13%; height: 18%; }}
