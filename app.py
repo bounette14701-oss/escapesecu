@@ -17,6 +17,7 @@ def get_image_base64(path):
     except FileNotFoundError:
         return ""
 
+# Assurez-vous que l'image s'appelle 'stranger_office.png'
 image_path = "stranger_office.png" 
 img_base64 = get_image_base64(image_path)
 
@@ -28,7 +29,7 @@ CHALLENGES = {
         "o": ["Je verrouille (Win + L)", "J'éteins l'écran", "Je ne touche à rien"], 
         "c": "Je verrouille (Win + L)", 
         "d": "4", 
-        "m": "Le verrouillage est essentiel pour empêcher l'usurpation d'identité."
+        "m": "Le verrouillage empêche l'usurpation d'identité et le vol de données."
     },
     "fire": {
         "label": "🔥 Poubelle", 
@@ -36,15 +37,15 @@ CHALLENGES = {
         "o": ["Eau pulvérisée", "CO2", "Sable"], 
         "c": "Eau pulvérisée", 
         "d": "1", 
-        "m": "L'eau pulvérisée refroidit les foyers de feux solides (papier)."
+        "m": "L'eau pulvérisée est le meilleur choix pour les feux de solides (papier/carton)."
     },
     "elec": {
         "label": "⚡ Électricité", 
-        "q": "La multiprise crépite. Risque majeur ?", 
+        "q": "La multiprise au sol crépite. Risque majeur ?", 
         "o": ["Électrisation et incendie", "Simple panne", "Mauvaises ondes"], 
         "c": "Électrisation et incendie", 
         "d": "9", 
-        "m": "Une prise surchargée est la cause n°1 des incendies de bureau."
+        "m": "Une multiprise au sol dans une zone de passage est un danger électrique et de chute."
     },
     "water": {
         "label": "💧 Sol Mouillé", 
@@ -52,15 +53,15 @@ CHALLENGES = {
         "o": ["Balisage et zone d'exclusion", "L'essuyer vite", "Sauter"], 
         "c": "Balisage et zone d'exclusion", 
         "d": "8", 
-        "m": "La chute de plain-pied est l'accident le plus fréquent."
+        "m": "Les chutes de plain-pied sont les accidents les plus fréquents au bureau."
     },
     "exit": {
         "label": "🚪 Issue de secours", 
-        "q": "Des cartons bloquent la sortie. Acceptable ?", 
+        "q": "Des cartons bloquent l'issue ('EXIT BLOCKED'). Est-ce toléré ?", 
         "o": ["Jamais", "Si c'est temporaire", "La nuit"], 
         "c": "Jamais", 
         "d": "3", 
-        "m": "Une issue doit être libre en permanence pour permettre l'évacuation."
+        "m": "Une issue de secours doit être dégagée en permanence pour l'évacuation."
     }
 }
 
@@ -72,10 +73,9 @@ if 'solved' not in st.session_state:
 if 'target' not in st.session_state:
     st.session_state.target = None
 
-# --- STYLE CSS RADICAL (Stranger Things + Fix Boutons) ---
+# --- STYLE CSS (Stranger Things + Failles Lumineuses) ---
 st.markdown(f"""
     <style>
-    /* Global */
     .stApp {{ background-color: #050505; color: #e2e2e2; }}
     h1 {{ color: #ff0000 !important; text-align: center; text-shadow: 0 0 10px #ff0000; font-family: 'Arial Black'; }}
     
@@ -89,75 +89,78 @@ st.markdown(f"""
         background-position: center;
         border: 2px solid #333;
         box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+        margin-bottom: 20px;
     }}
 
-    /* Cache TOUS les conteneurs de boutons Streamlit pour qu'ils ne prennent pas de place en bas */
-    div[data-testid="stButton"] {{
-        position: absolute;
-        margin: 0;
-        padding: 0;
-    }}
-
-    /* Rend le bouton lui-même invisible mais cliquable */
-    button[kind="secondary"] {{
-        background: transparent !important;
-        border: none !important;
-        color: transparent !important;
-        width: 100% !important;
-        height: 100% !important;
-        min-height: unset !important;
-        box-shadow: none !important;
-    }}
-
-    /* Effet au survol des zones */
-    button[kind="secondary"]:hover {{
+    /* Style des boutons "Failles" */
+    .stButton > button {{
         background: rgba(255, 0, 0, 0.2) !important;
-        border: 1px solid red !important;
+        border: 2px solid #ff0000 !important;
+        color: #ff0000 !important;
+        border-radius: 50% !important;
+        width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
+        font-weight: bold !important;
+        box-shadow: 0 0 15px #ff0000 !important;
+        transition: 0.3s;
+    }}
+    .stButton > button:hover {{
+        background: #ff0000 !important;
+        color: white !important;
+        transform: scale(1.2);
     }}
 
-    /* Positionnement des zones (Ajusté selon image_6c2f47.jpg) */
-    .hitbox-pc    {{ top: 44%; left: 68%; width: 8%; height: 10%; }}
-    .hitbox-fire  {{ top: 58%; left: 58%; width: 6%; height: 15%; }}
-    .hitbox-elec  {{ top: 76%; left: 45%; width: 9%; height: 9%; }}
-    .hitbox-water {{ top: 68%; left: 53%; width: 9%; height: 12%; }}
-    .hitbox-exit  {{ top: 42%; left: 40%; width: 8%; height: 20%; }}
+    /* Positionnement Absolu des boutons */
+    div[data-testid="column"] {{ position: static !important; }}
+    
+    /* On utilise des classes pour placer les boutons sur l'image */
+    .pos-pc    {{ position: absolute; top: 48%; left: 72%; z-index: 100; }}
+    .pos-fire  {{ position: absolute; top: 60%; left: 60%; z-index: 100; }}
+    .pos-elec  {{ position: absolute; top: 80%; left: 48%; z-index: 100; }}
+    .pos-water {{ position: absolute; top: 72%; left: 55%; z-index: 100; }}
+    .pos-exit  {{ position: absolute; top: 55%; left: 44%; z-index: 100; }}
 
-    /* Fix pour empêcher les boutons de s'empiler en bas */
-    .stVerticalBlock {{ gap: 0rem; }}
+    /* Masquer les boutons déjà résolus */
+    .solved {{ display: none !important; }}
     </style>
 """, unsafe_allow_html=True)
 
 # --- INTERFACE ---
 st.title("STRANGER OFFICE")
-st.markdown("<p style='text-align:center;'>Cliquez sur les anomalies de l'image pour neutraliser les menaces.</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;'>Cliquez sur les <b>failles rouges</b> pour neutraliser les dangers.</p>", unsafe_allow_html=True)
 
 # Zone Image Interactive
 st.markdown('<div class="overlay-container">', unsafe_allow_html=True)
 
-# Les boutons sont injectés dans des divs positionnées
-st.markdown('<div class="hitbox-pc">', unsafe_allow_html=True)
-if st.button(" ", key="btn_pc"): st.session_state.target = "pc"
+# Bouton PC
+st.markdown(f'<div class="pos-pc {"solved" if st.session_state.solved["pc"] else ""}">', unsafe_allow_html=True)
+if st.button("💻", key="btn_pc"): st.session_state.target = "pc"
 st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('<div class="hitbox-fire">', unsafe_allow_html=True)
-if st.button(" ", key="btn_fire"): st.session_state.target = "fire"
+# Bouton Feu
+st.markdown(f'<div class="pos-fire {"solved" if st.session_state.solved["fire"] else ""}">', unsafe_allow_html=True)
+if st.button("🔥", key="btn_fire"): st.session_state.target = "fire"
 st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('<div class="hitbox-elec">', unsafe_allow_html=True)
-if st.button(" ", key="btn_elec"): st.session_state.target = "elec"
+# Bouton Elec
+st.markdown(f'<div class="pos-elec {"solved" if st.session_state.solved["elec"] else ""}">', unsafe_allow_html=True)
+if st.button("⚡", key="btn_elec"): st.session_state.target = "elec"
 st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('<div class="hitbox-water">', unsafe_allow_html=True)
-if st.button(" ", key="btn_water"): st.session_state.target = "water"
+# Bouton Eau
+st.markdown(f'<div class="pos-water {"solved" if st.session_state.solved["water"] else ""}">', unsafe_allow_html=True)
+if st.button("💧", key="btn_water"): st.session_state.target = "water"
 st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('<div class="hitbox-exit">', unsafe_allow_html=True)
-if st.button(" ", key="btn_exit"): st.session_state.target = "exit"
+# Bouton Exit
+st.markdown(f'<div class="pos-exit {"solved" if st.session_state.solved["exit"] else ""}">', unsafe_allow_html=True)
+if st.button("🚪", key="btn_exit"): st.session_state.target = "exit"
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- RÉSOLUTION DU DÉFI ---
+# --- ZONE DE RÉSOLUTION ---
 if st.session_state.target:
     target = st.session_state.target
     data = CHALLENGES[target]
@@ -166,13 +169,13 @@ if st.session_state.target:
     st.subheader(f"🔍 Analyse : {data['label']}")
     if st.session_state.solved[target]:
         st.success(f"✅ Menace neutralisée. Chiffre : **{data['digit']}**")
-        st.info(data['m'])
     else:
         with st.form(key=f"form_{target}"):
             ans = st.radio(data['q'], data['o'], index=None)
-            if st.form_submit_button("Appliquer la procédure"):
+            if st.form_submit_button("Neutraliser"):
                 if ans == data['c']:
                     st.session_state.solved[target] = True
+                    st.session_state.target = None # Ferme la zone après réussite
                     st.balloons()
                     st.rerun()
                 elif ans is not None:
@@ -186,7 +189,6 @@ with c_inv:
     st.write("**Chiffres collectés :**")
     res = ""
     found = 0
-    # On affiche les chiffres dans l'ordre PC-Feu-Elec-Eau-Exit
     for k in ["pc", "fire", "elec", "water", "exit"]:
         if st.session_state.solved[k]:
             res += f" [{CHALLENGES[k]['digit']}] "
@@ -197,10 +199,10 @@ with c_inv:
     st.progress(found / 5)
 
 with c_code:
-    code_in = st.text_input("Saisir le code", max_chars=5, placeholder="XXXXX")
+    code_in = st.text_input("Code final", max_chars=5, placeholder="XXXXX")
     if st.button("FERMER LE PORTAIL", type="primary", use_container_width=True):
         if code_in == CODE_SECRET:
             st.snow()
-            st.success("BRAVO ! LE BUREAU EST SÉCURISÉ.")
+            st.success("BRAVO ! LE PORTAIL EST FERMÉ.")
         else:
             st.error("CODE INCORRECT")
