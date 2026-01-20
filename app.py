@@ -1,128 +1,201 @@
 import streamlit as st
 import base64
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="Hawkins Lab - Security System", layout="centered")
+# --- CONFIGURATION DE LA PAGE ---
+st.set_page_config(
+    page_title="Hawkins Lab - Système de Sécurité",
+    layout="centered", 
+    page_icon="🔦"
+)
 
+# --- CHARGEMENT DE L'IMAGE ---
 def get_image_base64(path):
     try:
         with open(path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode()
-    except: return ""
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        return encoded_string
+    except FileNotFoundError:
+        return ""
 
-# --- DONNÉES DES DÉFIS ---
+# Assurez-vous que votre image est nommée 'stranger_office.png'
+image_path = "stranger_office.png" 
+img_base64 = get_image_base64(image_path)
+
+# --- LOGIQUE DES DÉFIS ---
 CHALLENGES = {
-    "pc": {"label": "💻 Ordinateur", "q": "Un PC est déverrouillé. Que faire ?", "o": ["Verrouiller (Win+L)", "Éteindre l'écran", "L'ignorer"], "c": "Verrouiller (Win+L)", "d": "4", "m": "L'usurpation d'identité est un risque majeur."},
-    "fire": {"label": "🔥 Feu", "q": "Début d'incendie dans la corbeille !", "o": ["Eau pulvérisée", "Souffler dessus", "CO2"], "c": "Eau pulvérisée", "d": "1", "m": "L'eau pulvérisée refroidit les braises de papier."},
-    "elec": {"label": "⚡ Électricité", "q": "Étincelles sur la multiprise !", "o": ["Couper le courant", "Verser de l'eau", "Toucher les fils"], "c": "Couper le courant", "d": "9", "m": "N'intervenez jamais sur un circuit sous tension."},
-    "water": {"label": "💧 Sol Mouillé", "q": "Une flaque suspecte au sol.", "o": ["Balisage immédiat", "Sauter par-dessus", "Attendre"], "c": "Balisage immédiat", "d": "8", "m": "La chute est l'accident n°1 au bureau."},
-    "exit": {"label": "🚪 Issue de secours", "q": "Cartons bloquant la sortie.", "o": ["Dégager l'issue", "Pousser plus tard", "C'est normal"], "c": "Dégager l'issue", "d": "3", "m": "Une issue de secours doit être libre 24h/24."}
+    "pc": {
+        "label": "💻 Ordinateur", 
+        "q": "Un PC est déverrouillé en l'absence du collègue. Que faites-vous ?", 
+        "o": ["Je verrouille (Win + L)", "J'éteins l'écran", "Je ne touche à rien"], 
+        "c": "Je verrouille (Win + L)", 
+        "d": "4", 
+        "m": "Le verrouillage est la première barrière contre le vol de données."
+    },
+    "fire": {
+        "label": "🔥 Poubelle", 
+        "q": "Début d'incendie dans la corbeille ! Quel extincteur utiliser ?", 
+        "o": ["Eau pulvérisée", "CO2", "Sable"], 
+        "c": "Eau pulvérisée", 
+        "d": "1", 
+        "m": "L'eau pulvérisée est idéale pour les feux de solides (papier, carton)."
+    },
+    "elec": {
+        "label": "⚡ Électricité", 
+        "q": "La multiprise crépite. Quel est le risque majeur ?", 
+        "o": ["Électrisation et incendie", "Simple panne", "Mauvaises ondes"], 
+        "c": "Électrisation et incendie", 
+        "d": "9", 
+        "m": "Une prise surchargée est la cause n°1 des incendies de bureau."
+    },
+    "water": {
+        "label": "💧 Sol Mouillé", 
+        "q": "Une flaque visqueuse est au sol. Quelle est la priorité ?", 
+        "o": ["Balisage et zone d'exclusion", "L'essuyer avec du papier", "Sauter par-dessus"], 
+        "c": "Balisage et zone d'exclusion", 
+        "d": "8", 
+        "m": "La chute de plain-pied est l'accident le plus fréquent au travail."
+    },
+    "exit": {
+        "label": "🚪 Issue de secours", 
+        "q": "Des cartons bloquent la sortie. Est-ce toléré ?", 
+        "o": ["Jamais, l'accès doit être libre", "Oui, si c'est temporaire", "Seulement la nuit"], 
+        "c": "Jamais, l'accès doit être libre", 
+        "d": "3", 
+        "m": "En cas d'évacuation, chaque seconde compte. Rien ne doit gêner le passage."
+    }
 }
 
 CODE_SECRET = "41983"
 
-# --- INITIALISATION ---
+# --- INITIALISATION SESSION STATE ---
 if 'solved' not in st.session_state:
     st.session_state.solved = {k: False for k in CHALLENGES.keys()}
 if 'target' not in st.session_state:
     st.session_state.target = None
 
-# --- STYLE STRANGER THINGS ---
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
-    .stApp { background-color: #050505; color: #e2e2e2; font-family: 'Courier Prime', monospace; }
-    h1 { color: #ff0000 !important; text-shadow: 0 0 15px #ff0000; text-align: center; font-size: 3rem !important; }
-    .stButton>button { background-color: #1a1a1a; color: #ff0000; border: 1px solid #ff0000; width: 100%; }
-    .stButton>button:hover { background-color: #ff0000; color: white; }
-    .status-box { border: 1px solid #333; padding: 10px; border-radius: 5px; background: #111; margin-bottom: 10px; }
-</style>
+# --- STYLE CSS (Thème Stranger Things) ---
+st.markdown(f"""
+    <style>
+    .stApp {{ background-color: #050505; color: #e2e2e2; }}
+    h1 {{ color: #ff0000 !important; text-align: center; text-shadow: 0 0 10px #ff0000; font-family: 'Arial Black'; }}
+    
+    /* Conteneur de l'image interactive */
+    .overlay-container {{
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background-image: url('data:image/png;base64,{img_base64}');
+        background-size: cover;
+        background-position: center;
+        border: 2px solid #333;
+        box-shadow: 0 0 30px rgba(255, 0, 0, 0.4);
+    }}
+
+    /* Positionnement des zones cliquables invisibles */
+    .hitbox {{
+        position: absolute;
+        background: rgba(255, 0, 0, 0.0);
+        border: none;
+        cursor: pointer;
+        z-index: 100;
+    }}
+    .hitbox:hover {{
+        background: rgba(255, 0, 0, 0.2);
+        border: 1px solid red;
+    }}
+
+    /* Coordonnées des zones en % */
+    #area-fire {{ top: 58%; left: 58%; width: 7%; height: 14%; }}
+    #area-elec {{ top: 75%; left: 44%; width: 10%; height: 10%; }}
+    #area-water {{ top: 68%; left: 53%; width: 9%; height: 13%; }}
+    #area-exit {{ top: 43%; left: 41%; width: 8%; height: 19%; }}
+    #area-pc   {{ top: 45%; left: 68%; width: 7%; height: 9%; }}
+    </style>
 """, unsafe_allow_html=True)
 
+# --- INTERFACE ---
 st.title("STRANGER OFFICE")
-st.write("---")
+st.markdown("<p style='text-align:center;'>Analysez l'image et cliquez sur les anomalies pour fermer le portail.</p>", unsafe_allow_html=True)
 
-# --- INTERFACE IMAGE CLIQUABLE (HTML/JS) ---
-# On utilise un composant HTML pour capturer les clics précisément
-img_b64 = get_image_base64("stranger_office.png")
+# Affichage de l'image avec zones réactives (Hitboxes)
+# Note : On utilise des boutons Streamlit invisibles superposés
+st.markdown('<div class="overlay-container">', unsafe_allow_html=True)
 
-html_map = f"""
-<div style="position: relative; width: 100%; display: inline-block;">
-    <img src="data:image/png;base64,{img_b64}" style="width: 100%; border: 2px solid #444; box-shadow: 0 0 20px rgba(255,0,0,0.3);">
+col1, col2, col3, col4, col5 = st.columns(5) # Pour forcer la création des boutons dans le DOM
+
+# On injecte les boutons Streamlit dans les zones CSS
+with st.container():
+    # PC
+    st.markdown('<div id="area-pc" class="hitbox">', unsafe_allow_html=True)
+    if st.button(" ", key="btn_pc"): st.session_state.target = "pc"
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    <div onclick="window.parent.postMessage('exit', '*')" style="position: absolute; top: 43%; left: 41%; width: 8%; height: 20%; cursor: pointer; border: 1px dashed rgba(255,0,0,0.2);"></div>
-    <div onclick="window.parent.postMessage('elec', '*')" style="position: absolute; top: 75%; left: 44%; width: 10%; height: 10%; cursor: pointer; border: 1px dashed rgba(255,0,0,0.2);"></div>
-    <div onclick="window.parent.postMessage('water', '*')" style="position: absolute; top: 68%; left: 53%; width: 9%; height: 13%; cursor: pointer; border: 1px dashed rgba(255,0,0,0.2);"></div>
-    <div onclick="window.parent.postMessage('fire', '*')" style="position: absolute; top: 58%; left: 58%; width: 7%; height: 14%; cursor: pointer; border: 1px dashed rgba(255,0,0,0.2);"></div>
-    <div onclick="window.parent.postMessage('pc', '*')" style="position: absolute; top: 45%; left: 68%; width: 7%; height: 9%; cursor: pointer; border: 1px dashed rgba(255,0,0,0.2);"></div>
-</div>
+    # FEU
+    st.markdown('<div id="area-fire" class="hitbox">', unsafe_allow_html=True)
+    if st.button(" ", key="btn_fire"): st.session_state.target = "fire"
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # ELEC
+    st.markdown('<div id="area-elec" class="hitbox">', unsafe_allow_html=True)
+    if st.button(" ", key="btn_elec"): st.session_state.target = "elec"
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # EAU
+    st.markdown('<div id="area-water" class="hitbox">', unsafe_allow_html=True)
+    if st.button(" ", key="btn_water"): st.session_state.target = "water"
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # EXIT
+    st.markdown('<div id="area-exit" class="hitbox">', unsafe_allow_html=True)
+    if st.button(" ", key="btn_exit"): st.session_state.target = "exit"
+    st.markdown('</div>', unsafe_allow_html=True)
 
-<script>
-    // Ecouter les clics et envoyer l'info à Streamlit via un bouton caché
-    const mapItems = document.querySelectorAll('div[onclick]');
-    mapItems.forEach(item => {{
-        item.addEventListener('mouseover', () => item.style.backgroundColor = 'rgba(255,0,0,0.1)');
-        item.addEventListener('mouseout', () => item.style.backgroundColor = 'transparent');
-    }});
-</script>
-"""
+st.markdown('</div>', unsafe_allow_html=True)
 
-# Affichage de l'image via le composant HTML
-from streamlit_gsheets import GSheetsConnection # Non requis ici, juste pour le rappel
-import streamlit.components.v1 as components
-
-# Capture du clic via un petit hack : un bouton Streamlit invisible déclenché par JS
-# Pour simplifier, on garde les boutons sous l'image pour cette version si le JS est bloqué
-# Mais voici la version "Select" qui s'active quand on clique
-selected_zone = components.html(html_map, height=450)
-
-# Comme le passage de données HTML -> Streamlit est complexe, 
-# on ajoute des boutons de secours stylisés juste en dessous si le clic image échoue.
-st.info("🔦 Cliquez sur une zone suspecte de l'image ou utilisez les boutons ci-dessous :")
-
-cols = st.columns(5)
-for i, (key, data) in enumerate(CHALLENGES.items()):
-    with cols[i]:
-        label = "✅" if st.session_state.solved[key] else "❓"
-        if st.button(f"{label} {data['label']}", key=f"btn_{key}"):
-            st.session_state.target = key
-
-# --- ZONE DE RÉSOLUTION ---
+# --- RÉSOLUTION DU DÉFI ---
 if st.session_state.target:
     target = st.session_state.target
     data = CHALLENGES[target]
-    
     st.write("---")
-    st.subheader(f"Analyse de la menace : {data['label']}")
+    st.subheader(f"🔍 Analyse : {data['label']}")
     
     if st.session_state.solved[target]:
-        st.success(f"Indice trouvé : **{data['digit']}**")
-        st.caption(f"Note : {data['m']}")
+        st.success(f"Défi réussi ! Chiffre : **{data['digit']}**")
+        st.info(data['m'])
     else:
-        with st.form(key="solve_form"):
-            choice = st.radio(data['q'], data['o'])
-            if st.form_submit_button("VALIDER"):
-                if choice == data['c']:
+        with st.form(key=f"form_{target}"):
+            ans = st.radio(data['q'], data['o'], index=None)
+            if st.form_submit_button("Valider la procédure"):
+                if ans == data['c']:
                     st.session_state.solved[target] = True
                     st.balloons()
                     st.rerun()
-                else:
-                    st.error("ERREUR. Le danger se propage...")
+                elif ans is not None:
+                    st.error("Action incorrecte. Le danger persiste.")
 
-# --- VERROUILLAGE FINAL ---
+# --- INVENTAIRE ET CODE FINAL ---
 st.write("---")
-c1, c2 = st.columns([2, 1])
+c_inv, c_code = st.columns([2, 1])
 
-with c1:
-    st.write("**INVENTAIRE DES CHIFFRES :**")
-    code_display = "".join([f"[{CHALLENGES[k]['d']}]" if st.session_state.solved[k] else "[?]" for k in CHALLENGES])
-    st.subheader(code_display)
-
-with c2:
-    final_input = st.text_input("CODE DE SORTIE", max_chars=5)
-    if st.button("FERMER LE PORTAIL", type="primary"):
-        if final_input == CODE_SECRET:
-            st.snow()
-            st.success("BUREAU SÉCURISÉ. PORTAIL FERMÉ.")
+with c_inv:
+    st.write("**Chiffres du portail :**")
+    # Affichage des chiffres trouvés
+    display = ""
+    count = 0
+    for k in CHALLENGES.keys():
+        if st.session_state.solved[k]:
+            display += f" `{CHALLENGES[k]['digit']}` "
+            count += 1
         else:
-            st.error("CODE ERRONÉ.")
+            display += " `?` "
+    st.subheader(display)
+    st.progress(count / 5)
+
+with c_code:
+    code_in = st.text_input("Saisir le code", max_chars=5, placeholder="XXXXX")
+    if st.button("FERMER LE PORTAIL", type="primary", use_container_width=True):
+        if code_in == CODE_SECRET:
+            st.snow()
+            st.success("BRAVO ! LE BUREAU EST SÉCURISÉ.")
+        else:
+            st.error("CODE ERRONÉ")
