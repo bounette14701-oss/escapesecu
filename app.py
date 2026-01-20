@@ -15,10 +15,9 @@ def get_image_base64(path):
             encoded_string = base64.b64encode(image_file.read()).decode()
         return encoded_string
     except FileNotFoundError:
-        # Image par défaut ou erreur si le fichier est absent
         return ""
 
-# Remplacer par le chemin de votre image Stranger Things
+# Assurez-vous que le nom du fichier correspond à votre image Stranger Things
 image_path = "stranger_office.png" 
 img_base64 = get_image_base64(image_path)
 
@@ -58,17 +57,21 @@ CHALLENGES = {
     }
 }
 
-CODE_FINAL_CORRECT = "1983" # Année de Stranger Things
+CODE_FINAL_CORRECT = "1983"
 
-# --- STYLE CSS INJECTÉ ---
+# --- INITIALISATION ET PROTECTION CONTRE KEYERROR ---
+# Cette section vérifie que session_state est synchro avec le dictionnaire CHALLENGES
+if 'solved' not in st.session_state or set(st.session_state.solved.keys()) != set(CHALLENGES.keys()):
+    st.session_state.solved = {k: False for k in CHALLENGES.keys()}
+    st.session_state.current_target = None
+
+# --- STYLE CSS ---
 st.markdown(f"""
     <style>
     .stApp {{
         background-color: #050505;
         color: #e2e2e2;
     }}
-    
-    /* Titre Stranger Things Style */
     .stMarkdown h1 {{
         color: #ff0000 !important;
         text-align: center;
@@ -77,23 +80,18 @@ st.markdown(f"""
         text-shadow: 0 0 10px #ff0000;
         font-family: 'Arial Black', sans-serif;
     }}
-
-    /* Conteneur de l'image interactive */
     .image-container {{
         position: relative;
         width: 100%;
-        padding-bottom: 56.25%; /* Ratio 16:9 */
+        padding-bottom: 56.25%;
         background-image: url('data:image/png;base64,{img_base64}');
         background-size: cover;
         background-position: center;
         border: 2px solid #333;
         box-shadow: 0 0 30px rgba(255, 0, 0, 0.2);
     }}
-
-    /* Boutons Hitbox invisibles */
     .hitbox {{
         position: absolute;
-        display: block;
         background: rgba(255, 0, 0, 0.0);
         cursor: pointer;
         border: none;
@@ -103,40 +101,32 @@ st.markdown(f"""
         background: rgba(255, 0, 0, 0.2);
         border: 1px solid red;
     }}
-
-    /* Coordonnées des zones (ajustables) */
+    /* Positionnement des zones */
     .area-fire {{ top: 60%; left: 58%; width: 6%; height: 15%; }}
     .area-elec {{ top: 75%; left: 44%; width: 10%; height: 10%; }}
     .area-water {{ top: 70%; left: 53%; width: 8%; height: 12%; }}
     .area-exit {{ top: 45%; left: 40%; width: 8%; height: 20%; }}
-
     </style>
 """, unsafe_allow_html=True)
 
-# --- ÉTAT DE LA SESSION ---
-if 'solved' not in st.session_state:
-    st.session_state.solved = {k: False for k in CHALLENGES.keys()}
-if 'current_target' not in st.session_state:
-    st.session_state.current_target = None
-
-# --- HEADER ---
+# --- INTERFACE ---
 st.title("STRANGER OFFICE")
 st.write("---")
 
 col_main, col_tools = st.columns([3, 1])
 
 with col_main:
-    # Zone de jeu interactive
+    # Overlay interactif
     st.markdown(f"""
         <div class="image-container">
-            <button class="hitbox area-fire" onclick="window.location.href='#danger-detecte'"></button>
-            <button class="hitbox area-elec" onclick="window.location.href='#danger-detecte'"></button>
-            <button class="hitbox area-water" onclick="window.location.href='#danger-detecte'"></button>
-            <button class="hitbox area-exit" onclick="window.location.href='#danger-detecte'"></button>
+            <button class="hitbox area-fire" onclick="window.location.href='#danger'"></button>
+            <button class="hitbox area-elec" onclick="window.location.href='#danger'"></button>
+            <button class="hitbox area-water" onclick="window.location.href='#danger'"></button>
+            <button class="hitbox area-exit" onclick="window.location.href='#danger'"></button>
         </div>
     """, unsafe_allow_html=True)
     
-    # Navigation factice pour les clics (Streamlit buttons sont mieux pour la logique)
+    # Boutons d'inspection (nécessaires pour capturer l'action dans Streamlit)
     c1, c2, c3, c4 = st.columns(4)
     with c1: 
         if st.button("🔍 Inspecter Poubelle"): st.session_state.current_target = "fire_bin"
@@ -147,53 +137,43 @@ with col_main:
     with c4: 
         if st.button("🔍 Inspecter Issue"): st.session_state.current_target = "exit_blocked"
 
-    # Zone d'interaction dynamique
+    # Zone de défi
     if st.session_state.current_target:
         target = st.session_state.current_target
         data = CHALLENGES[target]
         
-        st.subheader(f"📍 {data['label']}", anchor="danger-detecte")
+        st.subheader(f"📍 {data['label']}", anchor="danger")
         
         if st.session_state.solved[target]:
             st.success(f"Défi complété ! Chiffre trouvé : {data['digit']}")
             st.info(data['myth'])
         else:
-            ans = st.radio(data['question'], data['options'], index=None)
-            if st.button("Neutraliser le danger"):
+            ans = st.radio(data['question'], data['options'], key=f"radio_{target}", index=None)
+            if st.button("Neutraliser le danger", key=f"btn_{target}"):
                 if ans == data['correct']:
                     st.session_state.solved[target] = True
                     st.rerun()
-                else:
+                elif ans is not None:
                     st.error("Action incorrecte ! Le danger se propage...")
 
 with col_tools:
     st.subheader("🕵️ Inventaire")
-    progress = 0
-    for k, v in CHALLENGES.items():
+    progress_count = 0
+    for k in CHALLENGES.keys():
         if st.session_state.solved[k]:
-            st.write(f"✅ {v['label']} : **{v['digit']}**")
-            progress += 1
+            st.write(f"✅ {CHALLENGES[k]['label']} : **{CHALLENGES[k]['digit']}**")
+            progress_count += 1
         else:
-            st.write(f"❌ {v['label']} : ?")
+            st.write(f"❌ {CHALLENGES[k]['label']} : ?")
     
-    st.progress(progress / 4)
-    
-    st.divider()
-    
-    # C'est ici que vous pourriez intégrer un Genially si besoin
-    with st.expander("📖 Manuel de Sécurité"):
-        st.write("Consultez les procédures officielles :")
-        # Exemple d'intégration Genially :
-        # st.components.v1.iframe("https://view.genial.ly/VOTRE_ID", height=400)
-        st.caption("(Intégrez ici un lien Genially ou PDF)")
-
+    st.progress(progress_count / len(CHALLENGES))
     st.divider()
     
     # Digicode
-    input_code = st.text_input("CODE DE DÉVERROUILLAGE", max_chars=4)
+    input_code = st.text_input("CODE DE DÉVERROUILLAGE", max_chars=4, placeholder="XXXX")
     if st.button("QUITTER L'UPSIDE DOWN"):
         if input_code == CODE_FINAL_CORRECT:
             st.balloons()
-            st.success("Félicitations ! Vous avez ramené la sécurité à Hawkins.")
+            st.success("BRAVO ! Portail fermé.")
         else:
-            st.error("Code incorrect. Les lumières clignotent...")
+            st.error("Code erroné...")
