@@ -1,134 +1,139 @@
 import streamlit as st
 
 def main():
-    st.set_page_config(page_title="HACK THE SAFETY", page_icon="⚡", layout="wide")
+    st.set_page_config(page_title="Escape the Office", page_icon="🏢", layout="wide")
 
-    # CSS pour un look "Terminal Hacker / Cyberpunk"
+    # Style pour transformer les boutons en "objets" du bureau
     st.markdown("""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
-        
-        html, body, [class*="css"] {
-            font-family: 'Fira Code', monospace;
-            background-color: #0d0221;
-            color: #00ff41;
-        }
-        
-        .stApp {
-            background: linear-gradient(180deg, #0d0221 0%, #0f0c29 100%);
-        }
-
-        .node-box {
-            border: 2px solid #00ff41;
-            padding: 20px;
-            border-radius: 10px;
-            background: rgba(0, 255, 65, 0.05);
-            margin-bottom: 20px;
+        .stButton>button {
+            border: 2px solid #4e5d6c;
+            border-radius: 15px;
+            height: 150px;
+            font-size: 50px;
+            background-color: #f0f2f6;
             transition: all 0.3s;
         }
-
-        .node-box:hover {
-            box-shadow: 0 0 15px #00ff41;
+        .stButton>button:hover {
+            border-color: #ff4b4b;
+            transform: scale(1.05);
+            background-color: #e1e4e8;
         }
-
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 5px;
+        .office-label {
+            text-align: center;
             font-weight: bold;
-            text-transform: uppercase;
+            color: #4e5d6c;
+            margin-top: -10px;
         }
-
-        .myth-text { color: #ff003c; text-shadow: 0 0 5px #ff003c; }
-        .real-text { color: #00ff41; text-shadow: 0 0 5px #00ff41; }
-        
-        /* Cacher les boutons radio classiques */
-        div[role="radiogroup"] {
-            flex-direction: row !important;
-            gap: 20px;
+        .challenge-box {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #ff4b4b;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
         }
         </style>
     """, unsafe_allow_html=True)
 
-    st.title("⚡ SYSTEM OVERRIDE: SAFETY PROTOCOL")
+    st.title("🕵️‍♂️ Escape Game : Le Bureau Piégé")
+    st.write("Cliquez sur les objets du bureau pour inspecter les risques et trouver les 4 chiffres du code de sortie.")
+
+    # Initialisation des découvertes
+    if 'found' not in st.session_state:
+        st.session_state.found = {"👁️": None, "🔌": None, "☕": None, "🍌": None}
+
+    # --- VUE DU BUREAU (GRILLE D'OBJETS) ---
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        if st.button("🖥️"):
+            st.session_state.current_item = "Ecran"
+        st.markdown("<p class='office-label'>Le Poste de Travail</p>", unsafe_allow_html=True)
+
+    with col2:
+        if st.button("🔌"):
+            st.session_state.current_item = "Multiprise"
+        st.markdown("<p class='office-label'>Sous le Bureau</p>", unsafe_allow_html=True)
+
+    with col3:
+        if st.button("☕"):
+            st.session_state.current_item = "Cafetière"
+        st.markdown("<p class='office-label'>Le Coin Café</p>", unsafe_allow_html=True)
+
+    with col4:
+        if st.button("🍌"):
+            st.session_state.current_item = "Sol"
+        st.markdown("<p class='office-label'>Le Passage</p>", unsafe_allow_html=True)
+
     st.write("---")
 
-    # Initialisation des états
-    if 'steps' not in st.session_state:
-        st.session_state.steps = {1: None, 2: None, 3: None, 4: None}
+    # --- ZONE DE DÉFI DYNAMIQUE ---
+    if 'current_item' in st.session_state:
+        item = st.session_state.current_item
+        
+        st.markdown(f"### 🔍 Inspection : {item}")
+        
+        with st.container():
+            st.markdown('<div class="challenge-box">', unsafe_allow_html=True)
+            
+            if item == "Ecran":
+                st.write("**Alerte Fatigue Visuelle !** On dit qu'on cligne 3x moins des yeux devant cet écran. Info ou Intox ?")
+                choice = st.radio("Verdict :", ["C'est un Mytho total", "C'est malheureusement Réel"], key="choice1")
+                if st.button("Vérifier le composant 1"):
+                    if "Réel" in choice:
+                        st.success("Correct ! On cligne 60% moins. Premier chiffre du code : **4**")
+                        st.session_state.found["👁️"] = "4"
+                    else:
+                        st.error("Mauvaise analyse. L'œil s'assèche vraiment !")
 
-    # --- DASHBOARD DE PROGRESSION ---
-    cols = st.columns(4)
-    for i in range(1, 5):
-        with cols[i-1]:
-            status = "✅" if st.session_state.steps[i] is not None else "❌"
-            st.markdown(f"**NODE 0{i}** \n{status}")
+            elif item == "Multiprise":
+                st.write("**Risque d'Incendie !** Un chargeur branché à vide, c'est dangereux ?")
+                choice = st.radio("Verdict :", ["Mytho, pas de courant consommé", "Réel, risque de surchauffe"], key="choice2")
+                if st.button("Vérifier le composant 2"):
+                    if "Réel" in choice:
+                        st.success("Exact ! L'effet Joule ne dort jamais. Deuxième chiffre : **2**")
+                        st.session_state.found["🔌"] = "2"
+                    else:
+                        st.error("Faux ! Un transformateur sous tension chauffe toujours.")
 
-    st.write("")
+            elif item == "Cafetière":
+                st.write("**Pause Café !** Boire 5 cafés aide-t-il à prévenir les douleurs aux poignets (TMS) ?")
+                choice = st.radio("Verdict :", ["Réel, la caféine détend", "Mytho, ça n'a aucun rapport"], key="choice3")
+                if st.button("Vérifier le composant 3"):
+                    if "Mytho" in choice:
+                        st.success("Bien vu ! Le café excite plus qu'il ne répare. Troisième chiffre : **9**")
+                        st.session_state.found["☕"] = "9"
+                    else:
+                        st.error("Et non, trop de café peut même augmenter la tension musculaire.")
 
-    # --- GRILLE DE JEU (2x2) ---
-    c1, c2 = st.columns(2)
+            elif item == "Sol":
+                st.write("**Zone de Passage !** Les chutes de plain-pied, c'est 15% des accidents de bureau ?")
+                choice = st.radio("Verdict :", ["Réel, c'est une cause majeure", "Mytho, on n'est pas si maladroits"], key="choice4")
+                if st.button("Vérifier le composant 4"):
+                    if "Réel" in choice:
+                        st.success("Vrai ! Un sol encombré est un piège. Dernier chiffre : **7**")
+                        st.session_state.found["🍌"] = "7"
+                    else:
+                        st.error("Détrompez-vous, c'est un des risques les plus sous-estimés !")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
 
-    with c1:
-        st.markdown('<div class="node-box">', unsafe_allow_html=True)
-        st.subheader("💾 DATA_STREAM_01")
-        st.write("On cligne 3x moins des yeux sur écran : Légende urbaine ?")
-        res1 = st.selectbox("ANALYSE :", ["En attente...", "RÉEL", "MYTHO"], key="s1")
-        st.session_state.steps[1] = res1 if res1 != "En attente..." else None
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="node-box">', unsafe_allow_html=True)
-        st.subheader("☕ ENERGY_CORE_03")
-        st.write("5 cafés par jour préviennent les TMS (poignets).")
-        res3 = st.selectbox("ANALYSE :", ["En attente...", "RÉEL", "MYTHO"], key="s3")
-        st.session_state.steps[3] = res3 if res3 != "En attente..." else None
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with c2:
-        st.markdown('<div class="node-box">', unsafe_allow_html=True)
-        st.subheader("⚠️ ACCIDENT_LOG_02")
-        st.write("15% des accidents de bureau = chutes de plain-pied.")
-        res2 = st.selectbox("ANALYSE :", ["En attente...", "RÉEL", "MYTHO"], key="s2")
-        st.session_state.steps[2] = res2 if res2 != "En attente..." else None
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        st.markdown('<div class="node-box">', unsafe_allow_html=True)
-        st.subheader("🔥 THERMAL_THREAT_04")
-        st.write("Un chargeur vide branché peut créer un incendie.")
-        res4 = st.selectbox("ANALYSE :", ["En attente...", "RÉEL", "MYTHO"], key="s4")
-        st.session_state.steps[4] = res4 if res4 != "En attente..." else None
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # --- TERMINAL DE VALIDATION ---
+    # --- CODE FINAL ---
     st.write("---")
-    if st.button("RUN DECRYPT_CODE.EXE"):
-        # Vérification des réponses
-        results = [
-            st.session_state.steps[1] == "MYTHO",
-            st.session_state.steps[2] == "RÉEL",
-            st.session_state.steps[3] == "MYTHO",
-            st.session_state.steps[4] == "RÉEL"
-        ]
-
-        if None in st.session_state.steps.values():
-            st.warning("⚠️ ANALYSE INCOMPLÈTE : Remplissez tous les nodes.")
-        elif all(results):
+    st.sidebar.title("🔐 Digicode de Sortie")
+    code_input = st.sidebar.text_input("Entrez les 4 chiffres trouvés :", placeholder="????")
+    
+    if st.sidebar.button("DÉVERROUILLER LA PORTE"):
+        if code_input == "4297":
+            st.sidebar.success("PORTE OUVERTE !")
             st.balloons()
-            st.success("🔓 ACCESS GRANTED | CODE: 4-2-9-7")
             st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Y4eG9pZzRreXp4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/26BGD4l9S8nAsy43C/giphy.gif")
-            st.markdown("### BRAVO ! Vous avez hacké la sécurité. Mission terminée.")
         else:
-            st.error("🚨 CORRUPTED DATA DETECTED - ACCÈS REFUSÉ")
-            st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExN3RscW56ZzRreXp4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/VdBZ9H4s2fP099QvY/giphy.gif")
-            
-            # Feedback "Hacker"
-            errors = []
-            if not results[0]: errors.append("Node 01: On cligne vraiment moins (60% moins) !")
-            if not results[1]: errors.append("Node 02: Les chutes sont une menace majeure (15%+) !")
-            if not results[2]: errors.append("Node 03: La caféine n'aide pas les muscles, elle les excite.")
-            if not results[3]: errors.append("Node 04: L'effet Joule sur un chargeur vide est réel !")
-            
-            for e in errors:
-                st.write(f"> `{e}`")
+            st.sidebar.error("CODE ERRONÉ")
+
+    # Rappel des indices trouvés
+    st.sidebar.write("Indices récoltés :")
+    st.sidebar.write(st.session_state.found)
 
 if __name__ == "__main__":
     main()
