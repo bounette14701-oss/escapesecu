@@ -1,125 +1,138 @@
 import streamlit as st
 
-def main():
-    # --- CONFIGURATION DU JEU (Modifiez ici) ---
-    CHALLENGES = {
-        "POSTE DE TRAVAIL": {
-            "icon": "🖥️",
-            "titre": "L'écran qui hypnotise",
-            "quest": "Est-il vrai qu'on cligne 3x moins des yeux devant un écran ?",
-            "options": ["MYTHO", "RÉEL"],
-            "correct": "RÉEL",
-            "chiffre": "4",
-            "feedback": "L'oeil s'assèche vraiment ! Rappel : La règle du 20-20-20 (toutes les 20 min, regarder à 20 pieds pendant 20 sec)."
-        },
-        "MULTIPRISE": {
-            "icon": "🔌",
-            "titre": "Le serpent électrique",
-            "quest": "Un chargeur seul branché consomme et peut surchauffer ?",
-            "options": ["MYTHO", "RÉEL"],
-            "correct": "RÉEL",
-            "chiffre": "2",
-            "feedback": "C'est l'effet Joule. Un transformateur sous tension, même 'à vide', travaille."
-        },
-        "COIN CAFÉ": {
-            "icon": "☕",
-            "titre": "La potion magique",
-            "quest": "Boire 5 cafés par jour réduit les risques de TMS au poignet ?",
-            "options": ["MYTHO", "RÉEL"],
-            "correct": "MYTHO",
-            "chiffre": "9",
-            "feedback": "Le café est un excitant nerveux, pas un relaxant musculaire. Rien ne vaut l'ergonomie !"
-        },
-        "SOL": {
-            "icon": "🚧",
-            "titre": "La zone de danger",
-            "quest": "Les chutes de plain-pied = 15% des accidents de bureau ?",
-            "options": ["MYTHO", "RÉEL"],
-            "correct": "RÉEL",
-            "chiffre": "7",
-            "feedback": "C'est un record ! Un carton ou un câble mal rangé est un piège redoutable."
-        }
+# --- CONFIGURATION DE LA PAGE ---
+st.set_page_config(page_title="Le Bureau Suspect - Escape Game Sécurité", layout="wide", page_icon="🕵️")
+
+# --- PERSONNALISATION DES DÉFIS (DICTIONNAIRE) ---
+# Vous pouvez changer les questions, les réponses et les chiffres du code ici.
+CHALLENGES = {
+    "multiprise": {
+        "label": "🔌 La Multiprise",
+        "question": "Peut-on brancher une multiprise sur une autre multiprise (montage en cascade) ?",
+        "options": ["Oui, si la puissance totale est faible", "Non, jamais, risque d'incendie", "Seulement si elles sont de la même marque"],
+        "correct": "Non, jamais, risque d'incendie",
+        "digit": "5",
+        "myth": "Le mythe : 'C'est pas grave si c'est juste pour un chargeur de téléphone'."
+    },
+    "ecran": {
+        "label": "💻 L'Écran Allumé",
+        "question": "Tu pars en pause café 5 minutes. Que fais-tu de ta session ?",
+        "options": ["Je laisse tel quel", "J'éteins juste l'écran", "Je verrouille ma session (Win + L)"],
+        "correct": "Je verrouille ma session (Win + L)",
+        "digit": "2",
+        "myth": "Le mythe : 'On est entre collègues, personne ne touchera à mon PC'."
+    },
+    "sac": {
+        "label": "👜 Le Sac au Sol",
+        "question": "Où doit-on ranger son sac ou ses câbles dans l'open space ?",
+        "options": ["Sous le bureau, dans le passage", "Dans un casier ou sous le bureau (hors zone de circulation)", "Peu importe"],
+        "correct": "Dans un casier ou sous le bureau (hors zone de circulation)",
+        "digit": "8",
+        "myth": "Le mythe : 'Les gens regardent où ils marchent'."
+    },
+    "sortie": {
+        "label": "🚪 L'Issue de Secours",
+        "question": "Un carton de livraison bloque l'issue de secours 'juste pour 1 heure'. Est-ce acceptable ?",
+        "options": ["Oui, c'est temporaire", "Non, une issue doit être dégagée en permanence", "Oui, si on prévient les collègues"],
+        "correct": "Non, une issue doit être dégagée en permanence",
+        "digit": "4",
+        "myth": "Le mythe : 'En cas d'incendie, on aura le temps de le pousser'."
     }
-    CODE_FINAL = "".join([v["chiffre"] for v in CHALLENGES.values()])
+}
 
-    # --- STYLE PERSONNALISÉ ---
-    st.set_page_config(page_title="Escape Game Sécurité", layout="wide")
-    st.markdown(f"""
-        <style>
-        .stButton>button {{
-            height: 120px;
-            border-radius: 15px;
-            font-size: 40px;
-            transition: 0.3s;
-        }}
-        .card {{
-            background-color: #f0f2f6;
-            padding: 20px;
-            border-radius: 15px;
-            border-left: 8px solid #ff4b4b;
-            margin-bottom: 20px;
-        }}
-        </style>
-    """, unsafe_allow_html=True)
+CODE_FINAL_CORRECT = "".join([v["digit"] for v in CHALLENGES.values()])
 
-    # --- LOGIQUE D'ÉTAT ---
-    if 'found_codes' not in st.session_state:
-        st.session_state.found_codes = {k: "?" for k in CHALLENGES.keys()}
-    if 'current_node' not in st.session_state:
-        st.session_state.current_node = None
+# --- STYLE CSS PERSONNALISÉ ---
+st.markdown(f"""
+    <style>
+    .main {{ background-color: #f0f2f6; }}
+    .stButton>button {{
+        width: 100%;
+        border-radius: 10px;
+        height: 80px;
+        font-weight: bold;
+        font-size: 18px;
+        border: 2px solid #2e4053;
+    }}
+    .found-digit {{
+        background-color: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }}
+    </style>
+""", unsafe_allow_html=True)
 
-    # --- INTERFACE PRINCIPALE ---
-    st.title("🕵️‍♂️ Escape Game : Inspection Bureau 304")
-    st.write("Fouillez le bureau en cliquant sur les éléments pour récolter les 4 chiffres du digicode.")
+# --- GESTION DE L'ÉTAT (SESSION STATE) ---
+if 'solved' not in st.session_state:
+    st.session_state.solved = {k: False for k in CHALLENGES.keys()}
+if 'digits_collected' not in st.session_state:
+    st.session_state.digits_collected = {}
 
-    # Affichage des objets (Le bureau)
-    cols = st.columns(len(CHALLENGES))
-    for i, (name, data) in enumerate(CHALLENGES.items()):
-        with cols[i]:
-            if st.button(data["icon"], key=name):
-                st.session_state.current_node = name
-            st.caption(f"<center>{name}</center>", unsafe_allow_html=True)
+# --- INTERFACE PRINCIPALE ---
+st.title("🕵️ Le Bureau Suspect")
+st.markdown("### Objectif : Inspectez le bureau, débusquez les risques et trouvez le code de sortie !")
 
-    st.divider()
+col1, col2 = st.columns([2, 1])
 
-    # Zone de Défi
-    if st.session_state.current_node:
-        node = st.session_state.current_node
-        data = CHALLENGES[node]
-        
-        st.markdown(f"""<div class="card">
-            <h3>{data['icon']} {data['titre']}</h3>
-            <p>{data['quest']}</p>
-        </div>""", unsafe_allow_html=True)
+with col1:
+    st.info("Cliquez sur un objet suspect pour l'inspecter.")
+    
+    # Simulation de l'Open Space avec des boutons
+    c1, c2 = st.columns(2)
+    
+    for i, (key, data) in enumerate(CHALLENGES.items()):
+        with (c1 if i % 2 == 0 else c2):
+            if st.button(data["label"], key=key):
+                st.session_state.current_inspect = key
 
-        ans = st.radio("Votre diagnostic :", data["options"], index=None, key=f"radio_{node}")
-        
-        if st.button("Valider l'inspection"):
-            if ans == data["correct"]:
-                st.success(f"✅ BIEN JOUÉ ! Le chiffre identifié est : {data['chiffre']}")
-                st.info(f"💡 Info Sécu : {data['feedback']}")
-                st.session_state.found_codes[node] = data["chiffre"]
-            else:
-                st.error("❌ Diagnostic erroné. L'élément reste suspect. Réessayez.")
-
-    # --- BARRE LATÉRALE (DIGICODE) ---
-    with st.sidebar:
-        st.header("🔐 Digicode")
-        st.write("Chiffres collectés :")
-        # Affichage visuel du code en cours
-        code_display = " ".join(st.session_state.found_codes.values())
-        st.subheader(f"`{code_display}`")
+    # Zone d'inspection dynamique
+    if 'current_inspect' in st.session_state:
+        key = st.session_state.current_inspect
+        data = CHALLENGES[key]
         
         st.divider()
+        st.subheader(f"Inspection : {data['label']}")
         
-        user_code = st.text_input("Saisir le code final :", max_chars=4)
-        if st.button("TENTER LA SORTIE"):
-            if user_code == CODE_FINAL:
-                st.balloons()
-                st.success("🔓 ACCÈS AUTORISÉ. Vous avez sécurisé le bureau !")
-                st.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Y4eG9pZzRreXp4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/26BGD4l9S8nAsy43C/giphy.gif")
-            else:
-                st.error("CODE INCORRECT. La porte reste verrouillée.")
+        if st.session_state.solved[key]:
+            st.success(f"✅ Défi relevé ! Le chiffre découvert est : **{data['digit']}**")
+            st.info(data["myth"])
+        else:
+            choice = st.radio(data["question"], options=data["options"], index=None)
+            if st.button("Valider la réponse"):
+                if choice == data["correct"]:
+                    st.session_state.solved[key] = True
+                    st.session_state.digits_collected[key] = data["digit"]
+                    st.rerun()
+                else:
+                    st.error("Oups... Ce n'est pas la bonne pratique. Réessayez !")
 
-if __name__ == "__main__":
-    main()
+with col2:
+    st.sidebar.header("🎒 Votre Inventaire")
+    st.sidebar.write("Indices collectés :")
+    
+    for key, data in CHALLENGES.items():
+        if st.session_state.solved[key]:
+            st.sidebar.markdown(f"<div class='found-digit'>{data['label']} → {data['digit']}</div>", unsafe_allow_html=True)
+        else:
+            st.sidebar.markdown(f"<div style='color:gray; text-align:center;'>[ {data['label']} bloqué ]</div>", unsafe_allow_html=True)
+
+    st.sidebar.divider()
+    
+    # Digicode Final
+    st.sidebar.subheader("🔓 Digicode Final")
+    user_code = st.sidebar.text_input("Entrez les 4 chiffres :", max_chars=4)
+    
+    if st.sidebar.button("Tenter de sortir"):
+        if user_code == CODE_FINAL_CORRECT:
+            st.balloons()
+            st.sidebar.success("BRAVO ! Vous avez sécurisé le bureau et terminé la réunion !")
+        else:
+            st.sidebar.error("Code incorrect. Continuez l'inspection.")
+
+# --- FOOTER ---
+st.divider()
+st.caption("Point Sécurité Ludique - Créé pour briser les mythes de l'Open Space.")
