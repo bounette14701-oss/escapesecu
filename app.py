@@ -86,7 +86,7 @@ st.markdown(f"""
 
     /* Cache totalement les boutons Streamlit mais les garde cliquables */
     div[data-testid="stButton"] button {{
-        background: transparent !important;
+        background: rgba(255, 0, 0, 0.15) '''transparent !important;'''
         color: transparent !important;
         border: none !important;
         width: 100% !important;
